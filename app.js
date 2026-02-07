@@ -130,3 +130,66 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
 
 // auto-load default
 loadDashboard(document.getElementById("hourInput").value).catch(()=>{});
+// ===== CHAT TOGGLE =====
+const chatToggle = document.getElementById("chatToggle");
+const chatModal = document.getElementById("chatModal");
+const closeChat = document.getElementById("closeChat");
+
+chatToggle.onclick = () => {
+  chatModal.classList.remove("hidden");
+};
+
+closeChat.onclick = () => {
+  chatModal.classList.add("hidden");
+};
+
+// ===== CHAT LOGIC =====
+const chatWindow = document.getElementById("chatWindow");
+const chatInput = document.getElementById("chatInput");
+const sendChat = document.getElementById("sendChat");
+
+function addMessage(text, sender){
+  const div = document.createElement("div");
+  div.className = `msg ${sender}`;
+  div.textContent = text;
+  chatWindow.appendChild(div);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+sendChat.onclick = sendQuestion;
+
+chatInput.addEventListener("keydown", e => {
+  if(e.key === "Enter") sendQuestion();
+});
+
+function sendQuestion(){
+  const question = chatInput.value.trim();
+  if(!question) return;
+
+  addMessage(question, "user");
+  chatInput.value = "";
+
+  fetch("/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      hour: document.getElementById("hourInput").value,
+      question: question
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    addMessage(data.answer, "bot");
+  })
+  .catch(() => {
+    addMessage("Error connecting to backend.", "bot");
+  });
+}
+
+// ===== SUGGESTED QUESTIONS =====
+document.querySelectorAll(".suggested button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    chatInput.value = btn.dataset.q;
+    chatInput.focus();
+  });
+});
